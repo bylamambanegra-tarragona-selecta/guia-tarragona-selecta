@@ -35,12 +35,12 @@ export async function updateSession(request: NextRequest) {
 
     const isAuthRoute = request.nextUrl.pathname.startsWith('/login')
 
-    /* if (!user && !isAuthRoute) {
+    if (!user && !isAuthRoute) {
         // Si no hay usuario y trata de ir a una ruta protegida (cualquiera que no sea /login)
         const url = request.nextUrl.clone()
         url.pathname = '/login'
         return NextResponse.redirect(url)
-    } */
+    }
 
     if (user && isAuthRoute) {
         // Si hay usuario y trata de ir a /login, llevar a comercios (home page para prospección)
