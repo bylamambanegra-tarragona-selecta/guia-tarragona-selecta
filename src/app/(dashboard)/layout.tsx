@@ -1,7 +1,6 @@
 import { Sidebar } from "@/components/layout/sidebar"
 import { HeaderUserMenu } from "@/components/layout/header-user-menu"
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
 
 export default async function DashboardLayout({
     children,

@@ -38,8 +38,8 @@ export async function GET(request: NextRequest) {
             // Estado del anuncio (incluye null para 'sin definir')
             estado.length > 0 ? {
                 OR: [
-                    ...(estado.filter(e => e !== 'null').length > 0 ? [{
-                        estado_anuncio: { in: estado.filter(e => e !== 'null') as EstadoAnuncio[] }
+                    ...(estado.filter((e: string) => e !== 'null').length > 0 ? [{
+                        estado_anuncio: { in: estado.filter((e: string) => e !== 'null') as EstadoAnuncio[] }
                     }] : []),
                     ...(estado.includes('null') ? [{ estado_anuncio: null }] : []),
                 ],
