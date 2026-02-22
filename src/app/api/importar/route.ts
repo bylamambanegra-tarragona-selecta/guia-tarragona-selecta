@@ -1,0 +1,101 @@
+import prisma from '@/lib/prisma'
+import { NextRequest, NextResponse } from 'next/server'
+import { TipoComercio, EstadoAnuncio } from '@prisma/client'
+import { z } from 'zod'
+
+const ComercioImportSchema = z.object({
+    nombre: z.string().min(1),
+    tipo_comercio: z.nativeEnum(TipoComercio),
+    barrio: z.string().min(1),
+    codigo_postal: z.string().min(5).max(10),
+    direccion: z.string().optional().nullable(),
+    telefono: z.string().optional().nullable(),
+    email: z.string().email().optional().nullable().or(z.literal('')),
+    web: z.string().url().optional().nullable().or(z.literal('')),
+    instagram: z.string().optional().nullable(),
+    facebook: z.string().optional().nullable(),
+    tiktok: z.string().optional().nullable(),
+    estado_anuncio: z.nativeEnum(EstadoAnuncio).optional().nullable(),
+    visitado: z.boolean().optional(),
+})
+
+export async function POST(request: NextRequest) {
+    try {
+        const body = await request.json()
+        const { comercios, duplicados } = body
+        // duplicados: 'omitir' | 'actualizar' | 'importar'
+
+        let importados = 0
+        let omitidos = 0
+        let errores = 0
+
+        // Transacción batch
+        await prisma.$transaction(async (tx) => {
+            for (const row of comercios) {
+                const parsed = ComercioImportSchema.safeParse(row)
+                if (!parsed.success) { errores++; continue }
+
+                const data = parsed.data
+
+                if (duplicados !== 'importar') {
+                    // Detectar duplicado por nombre + barrio
+                    const existing = await tx.comercio.findFirst({
+                        where: {
+                            nombre: { equals: data.nombre, mode: 'insensitive' },
+                            barrio: { equals: data.barrio, mode: 'insensitive' },
+                        }
+                    })
+
+                    if (existing) {
+                        if (duplicados === 'omitir') { omitidos++; continue }
+                        if (duplicados === 'actualizar') {
+                            await tx.comercio.update({
+                                where: { id: existing.id },
+                                data: {
+                                    tipo_comercio: data.tipo_comercio,
+                                    codigo_postal: data.codigo_postal,
+                                    direccion: data.direccion ?? undefined,
+                                    telefono: data.telefono ?? undefined,
+                                    email: data.email ?? undefined,
+                                    web: data.web ?? undefined,
+                                    instagram: data.instagram ?? undefined,
+                                    facebook: data.facebook ?? undefined,
+                                    tiktok: data.tiktok ?? undefined,
+                                    estado_anuncio: data.estado_anuncio ?? null,
+                                    visitado: data.visitado ?? false,
+                                }
+                            })
+                            importados++
+                            continue
+                        }
+                    }
+                }
+
+                await tx.comercio.create({
+                    data: {
+                        nombre: data.nombre,
+                        tipo_comercio: data.tipo_comercio,
+                        barrio: data.barrio,
+                        codigo_postal: data.codigo_postal,
+                        direccion: data.direccion ?? undefined,
+                        telefono: data.telefono ?? undefined,
+                        email: data.email ?? undefined,
+                        web: data.web ?? undefined,
+                        instagram: data.instagram ?? undefined,
+                        facebook: data.facebook ?? undefined,
+                        tiktok: data.tiktok ?? undefined,
+                        estado_anuncio: data.estado_anuncio ?? null,
+                        visitado: data.visitado ?? false,
+                        notas: [],
+                    }
+                })
+                importados++
+            }
+        }, { timeout: 60000 })
+
+        return NextResponse.json({ importados, omitidos, errores })
+    } catch (error) {
+        console.error('Import error:', error)
+        return NextResponse.json({ error: 'Error durante la importación.' }, { status: 500 })
+    }
+}

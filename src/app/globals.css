@@ -1,27 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    /* La Mamba Negra — Paleta Corporativa Oscura */
+    --background: 230 35% 7%;
+    /* #1A1A2E */
+    --foreground: 0 0% 95%;
+
+    --card: 230 28% 10%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 230 28% 10%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 349 79% 57%;
+    /* #E94560 — Rojo corporativo */
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 230 22% 16%;
+    --secondary-foreground: 0 0% 90%;
+
+    --muted: 230 18% 14%;
+    --muted-foreground: 230 10% 52%;
+
+    --accent: 38 90% 55%;
+    /* #F5A623 — Dorado corporativo */
+    --accent-foreground: 230 35% 7%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 230 18% 18%;
+    --input: 230 18% 14%;
+    --ring: 349 79% 57%;
+
+    --radius: 0.5rem;
+  }
+
+  /* Dark mode = modo por defecto de la app */
+  .dark {
+    --background: 230 35% 7%;
+    --foreground: 0 0% 95%;
+    --card: 230 28% 10%;
+    --card-foreground: 0 0% 95%;
+    --popover: 230 28% 10%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 349 79% 57%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 230 22% 16%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 230 18% 14%;
+    --muted-foreground: 230 10% 52%;
+    --accent: 38 90% 55%;
+    --accent-foreground: 230 35% 7%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 230 18% 18%;
+    --input: 230 18% 14%;
+    --ring: 349 79% 57%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
   }
 }

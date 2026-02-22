@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# La Mamba Negra - Guía Tarragona (Prospección)
 
-## Getting Started
+Sistema interno de gestión comercial y prospección para La Mamba Negra en Tarragona.
+Construido con Next.js 14, TailwindCSS, Prisma, Supabase y Google Places API.
 
-First, run the development server:
+## Funcionalidades Principales
+- **Gestión de Comercios**: CRUD completo, notas cronológicas, insignias de estado.
+- **Búsqueda Avanzada**: Combinación de hasta 6 filtros en tiempo real y búsqeda libre de texto.
+- **Importación/Exportación Masiva**: Sube archivos CSV/Excel con previsualización, mapeo inteligente y exporta reportes filtrados a Excel.
+- **Descubrimiento Inteligente**: Módulo Discover integrado con Google Maps y Google Places API para prospección en tiempo real interactiva (incluye badge de comercio "Ya Registrado").
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Requisitos
+- Node.js 18.17+
+- Base de datos PostgreSQL (local o externa como Supabase)
+- Google Places API Key (v1 habilitada)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Instalación Local
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Instala las dependencias:
+   ```bash
+   npm install
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. Configura las variables de entorno copiando la plantilla:
+   ```bash
+   cp .env.example .env.local
+   ```
+   Rellena el archivo `.env.local` con tus credenciales de Supabase, URL de la BD y la clave de Google Places. El campo `GOOGLE_PLACES_API_KEY` es obligatorio para que funcione el módulo de descubrir. Para la base de datos local y Prisma, asegúrate de crear el archivo `.env` tradicional.
 
-## Learn More
+3. Sincroniza la base de datos:
+   ```bash
+   npx prisma generate
+   npx prisma db push
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+4. Ejecuta el servidor de desarrollo:
+   ```bash
+   npm run dev
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Estilos y Temática
+La plataforma utiliza la temática corporativa **"La Mamba Negra"**, la cual está priorizada por un modo oscuro elegante y estilizado (fondo `#1A1A2E`, acentos `primary` `#E94560`, `accent` `#F5A623`).

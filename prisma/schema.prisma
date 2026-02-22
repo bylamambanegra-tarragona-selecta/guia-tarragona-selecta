@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────
+
+enum TipoComercio {
+  RESTAURANTE
+  BAR
+  HOTEL
+  TIENDA_REGALOS
+  SALUD_CUIDADO
+  REPARACIONES
+  SERVICIOS
+  OCIO_DIURNO
+  OCIO_NOCTURNO
+  ANUNCIO_ESPECIAL
+  OTROS
+}
+
+enum EstadoAnuncio {
+  SE_ANUNCIA
+  NO_SE_ANUNCIA
+  INTERESA
+  TAL_VEZ
+}
+
+// ─────────────────────────────────────────────────────────────
+// COMERCIO — tabla principal
+// ─────────────────────────────────────────────────────────────
+
+model Comercio {
+  // Identificación
+  id             String       @id @default(uuid())
+  nombre         String
+  tipo_comercio  TipoComercio
+  barrio         String
+  codigo_postal  String
+
+  // Contacto
+  direccion      String?
+  telefono       String?
+  email          String?
+  web            String?
+
+  // Redes sociales
+  instagram      String?
+  facebook       String?
+  tiktok         String?
+
+  // Google Maps / Places
+  maps_url       String?
+  maps_place_id  String?      @unique
+  maps_lat       Float?
+  maps_lng       Float?
+
+  // Prospección
+  estado_anuncio EstadoAnuncio?
+  tipo_anuncio   String?
+  visitado       Boolean        @default(false)
+
+  // Notas — array JSON de { texto, fecha, autor }
+  notas          Json           @default("[]")
+
+  // Metadatos
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @updatedAt
+
+  // Índices para búsquedas frecuentes
+  @@index([barrio])
+  @@index([tipo_comercio])
+  @@index([codigo_postal])
+  @@index([visitado])
+  @@index([estado_anuncio])
+  @@index([barrio, tipo_comercio])
+  @@index([barrio, codigo_postal])
+
+  @@map("comercios")
+}
