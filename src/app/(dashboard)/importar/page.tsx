@@ -26,6 +26,10 @@ const APP_FIELDS = [
     { value: 'instagram', label: 'Instagram' },
     { value: 'facebook', label: 'Facebook' },
     { value: 'tiktok', label: 'TikTok' },
+    { value: 'maps_url', label: 'Google Maps URL' },
+    { value: 'maps_lat', label: 'Latitud' },
+    { value: 'maps_lng', label: 'Longitud' },
+    { value: 'notas', label: 'Notas iniciales' },
     { value: 'estado_anuncio', label: 'Estado anuncio' },
     { value: 'visitado', label: 'Visitado' },
 ]
@@ -40,6 +44,10 @@ const AUTO_MAP: Record<string, string> = {
     email: 'email', correo: 'email',
     web: 'web', website: 'web', url: 'web',
     instagram: 'instagram', facebook: 'facebook', tiktok: 'tiktok',
+    'maps url': 'maps_url', 'google maps': 'maps_url', maps: 'maps_url',
+    latitud: 'maps_lat', lat: 'maps_lat', latitude: 'maps_lat',
+    longitud: 'maps_lng', lng: 'maps_lng', longitude: 'maps_lng',
+    notas: 'notas', notes: 'notas', comentario: 'notas',
     estado: 'estado_anuncio', 'estado anuncio': 'estado_anuncio',
     visitado: 'visitado', visited: 'visitado',
 }

@@ -1,0 +1,6 @@
+nombre,tipo_comercio,barrio,codigo_postal,direccion,telefono,email,web,instagram,facebook,tiktok,maps_url,maps_lat,maps_lng,estado_anuncio,visitado,notas
+Restaurante El Serrallo,RESTAURANTE,Serrallo,43004,Moll de la Costa 15,977123456,info@elserrallo.com,https://elserrallo.com,elserrallo_ig,elserrallo_fb,,https://maps.app.goo.gl/xyz,41.1095,1.2421,SE_ANUNCIA,true
+Bar Part Alta,BAR,Part Alta,43003,Carrer Major 10,977654321,hola@barpartalta.es,,,barpartalta_fb,bar_tarragona_tiktok,https://maps.app.goo.gl/abc,41.1171,1.2584,INTERESA,false
+Hotel Imperial,HOTEL,Eixample,43001,Rambla Nova 2,977112233,reservas@hotelimperial.com,https://hotelimperial.com,hotelimperial_tgn,,,https://maps.app.goo.gl/efg,41.1162,1.2492,TAL_VEZ,true
+Tienda Souvenirs TGN,TIENDA_REGALOS,Part Alta,43003,Plaça de la Font 5,977334455,,,,,,,41.1165,1.2552,NO_SE_ANUNCIA,false
+Gimnasio Mediterraneo,OTROS,Llevant,43007,Via Augusta 50,977556677,contacto@gimmed.com,https://gimmed.com,,,,,,,INTERESA,true

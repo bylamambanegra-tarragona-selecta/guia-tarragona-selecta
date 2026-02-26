@@ -15,8 +15,12 @@ const ComercioImportSchema = z.object({
     instagram: z.string().optional().nullable(),
     facebook: z.string().optional().nullable(),
     tiktok: z.string().optional().nullable(),
+    maps_url: z.string().url().optional().nullable().or(z.literal('')),
+    maps_lat: z.number().optional().nullable().or(z.string().transform(v => v ? parseFloat(v) : null)),
+    maps_lng: z.number().optional().nullable().or(z.string().transform(v => v ? parseFloat(v) : null)),
     estado_anuncio: z.nativeEnum(EstadoAnuncio).optional().nullable(),
     visitado: z.boolean().optional(),
+    notas: z.string().optional().nullable(),
 })
 
 export async function POST(request: NextRequest) {
@@ -61,6 +65,9 @@ export async function POST(request: NextRequest) {
                                     instagram: data.instagram ?? undefined,
                                     facebook: data.facebook ?? undefined,
                                     tiktok: data.tiktok ?? undefined,
+                                    maps_url: data.maps_url ?? undefined,
+                                    maps_lat: data.maps_lat ?? undefined,
+                                    maps_lng: data.maps_lng ?? undefined,
                                     estado_anuncio: data.estado_anuncio ?? null,
                                     visitado: data.visitado ?? false,
                                 }
@@ -84,9 +91,16 @@ export async function POST(request: NextRequest) {
                         instagram: data.instagram ?? undefined,
                         facebook: data.facebook ?? undefined,
                         tiktok: data.tiktok ?? undefined,
+                        maps_url: data.maps_url ?? undefined,
+                        maps_lat: data.maps_lat ?? undefined,
+                        maps_lng: data.maps_lng ?? undefined,
                         estado_anuncio: data.estado_anuncio ?? null,
                         visitado: data.visitado ?? false,
-                        notas: [],
+                        notas: data.notas ? [{
+                            texto: data.notas,
+                            fecha: new Date().toISOString(),
+                            autor: 'Sistema (Importación)'
+                        }] : [],
                     }
                 })
                 importados++
