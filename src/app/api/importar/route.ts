@@ -3,23 +3,36 @@ import { NextRequest, NextResponse } from 'next/server'
 import { TipoComercio, EstadoAnuncio } from '@prisma/client'
 import { z } from 'zod'
 
+const optionalDecimal = z.preprocess((val) => {
+    if (val === "" || val === null || val === undefined) return null;
+    if (typeof val === "string") {
+        const cleaned = val.replace(',', '.').trim();
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? null : num;
+    }
+    return typeof val === "number" ? val : null;
+}, z.number().nullable().optional());
+
 const ComercioImportSchema = z.object({
     nombre: z.string().min(1),
     tipo_comercio: z.nativeEnum(TipoComercio),
     barrio: z.string().min(1),
-    codigo_postal: z.string().min(5).max(10),
+    codigo_postal: z.string().min(1), // Más flexible para CP internacionales o formatos sucios
     direccion: z.string().optional().nullable(),
     telefono: z.string().optional().nullable(),
-    email: z.string().email().optional().nullable().or(z.literal('')),
-    web: z.string().url().optional().nullable().or(z.literal('')),
+    email: z.string().optional().nullable().or(z.literal('')),
+    web: z.string().optional().nullable().or(z.literal('')),
     instagram: z.string().optional().nullable(),
     facebook: z.string().optional().nullable(),
     tiktok: z.string().optional().nullable(),
-    maps_url: z.string().url().optional().nullable().or(z.literal('')),
-    maps_lat: z.number().optional().nullable().or(z.string().transform(v => v ? parseFloat(v) : null)),
-    maps_lng: z.number().optional().nullable().or(z.string().transform(v => v ? parseFloat(v) : null)),
+    maps_url: z.string().optional().nullable().or(z.literal('')),
+    maps_lat: optionalDecimal,
+    maps_lng: optionalDecimal,
     estado_anuncio: z.nativeEnum(EstadoAnuncio).optional().nullable(),
-    visitado: z.boolean().optional(),
+    visitado: z.preprocess((val) => {
+        if (typeof val === 'string') return val.toLowerCase() === 'true';
+        return val;
+    }, z.boolean().optional().default(false)),
     notas: z.string().optional().nullable(),
 })
 
