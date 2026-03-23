@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Search, MapPin, Star, CheckCircle2, Loader2 } from "lucide-react"
+import { Search, MapPin, Star, CheckCircle2, Loader2, Zap } from "lucide-react"
 import { GoogleMap, LoadScript, Marker, InfoWindow } from "@react-google-maps/api"
 
 import { Button } from "@/components/ui/button"
@@ -60,71 +60,19 @@ const MAP_OPTIONS = {
         { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
         { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
         { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-        {
-            featureType: "administrative.locality",
-            elementType: "labels.text.fill",
-            stylers: [{ color: "#d59563" }],
-        },
-        {
-            featureType: "poi",
-            elementType: "labels.text.fill",
-            stylers: [{ color: "#d59563" }],
-        },
-        {
-            featureType: "poi.park",
-            elementType: "geometry",
-            stylers: [{ color: "#263c3f" }],
-        },
-        {
-            featureType: "poi.park",
-            elementType: "labels.text.fill",
-            stylers: [{ color: "#6b9a76" }],
-        },
-        {
-            featureType: "road",
-            elementType: "geometry",
-            stylers: [{ color: "#38414e" }],
-        },
-        {
-            featureType: "road",
-            elementType: "geometry.stroke",
-            stylers: [{ color: "#212a37" }],
-        },
-        {
-            featureType: "road",
-            elementType: "labels.text.fill",
-            stylers: [{ color: "#9ca5b3" }],
-        },
-        {
-            featureType: "road.highway",
-            elementType: "geometry",
-            stylers: [{ color: "#746855" }],
-        },
-        {
-            featureType: "road.highway",
-            elementType: "geometry.stroke",
-            stylers: [{ color: "#1f2835" }],
-        },
-        {
-            featureType: "road.highway",
-            elementType: "labels.text.fill",
-            stylers: [{ color: "#f3d19c" }],
-        },
-        {
-            featureType: "water",
-            elementType: "geometry",
-            stylers: [{ color: "#17263c" }],
-        },
-        {
-            featureType: "water",
-            elementType: "labels.text.fill",
-            stylers: [{ color: "#515c6d" }],
-        },
-        {
-            featureType: "water",
-            elementType: "labels.text.stroke",
-            stylers: [{ color: "#17263c" }],
-        },
+        { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+        { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+        { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
+        { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
+        { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] },
+        { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
+        { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
+        { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
+        { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
+        { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
+        { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
+        { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
+        { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] },
     ],
 }
 
@@ -136,14 +84,18 @@ type PlaceResult = {
     websiteUri?: string;
     location: { latitude: number; longitude: number };
     rating?: number;
+    userRatingCount?: number;
     googleMapsUri?: string;
 }
+
+type Mode = 'normal' | 'deep'
 
 export function DiscoverClient({ existingPlaceIds: initialIds }: { existingPlaceIds: string[] }) {
     const { toast } = useToast()
     const [existingIds, setExistingIds] = useState<Set<string>>(new Set(initialIds))
+    const [mode, setMode] = useState<Mode>('normal')
 
-    // Formulario de búsqueda
+    // Normal search state
     const [searchTipo, setSearchTipo] = useState('')
     const [searchZona, setSearchZona] = useState('')
     const [searchText, setSearchText] = useState('')
@@ -151,26 +103,33 @@ export function DiscoverClient({ existingPlaceIds: initialIds }: { existingPlace
     const [results, setResults] = useState<PlaceResult[]>([])
     const [selectedPlace, setSelectedPlace] = useState<PlaceResult | null>(null)
 
-    // Formulario de importación
+    // Deep search state
+    const [deepCategoria, setDeepCategoria] = useState('')
+    const [deepZona, setDeepZona] = useState('')
+    const [deepLoading, setDeepLoading] = useState(false)
+    const [deepResults, setDeepResults] = useState<PlaceResult[]>([])
+    const [savingAll, setSavingAll] = useState(false)
+    const [deepBarrio, setDeepBarrio] = useState('')
+    const [deepTipo, setDeepTipo] = useState<string>('')
+    const [deepCP, setDeepCP] = useState('43001')
+
+    // Import sheet state
     const [importOpen, setImportOpen] = useState(false)
     const [importing, setImporting] = useState(false)
     const [placeToImport, setPlaceToImport] = useState<PlaceResult | null>(null)
 
-    const mapCenter = { lat: 41.1189, lng: 1.2445 } // Tarragona centro
+    const mapCenter = { lat: 41.1189, lng: 1.2445 }
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!searchTipo && !searchText && !searchZona) return
-
         setLoading(true)
         setSelectedPlace(null)
         try {
             const query = [searchTipo, searchZona, searchText].filter(Boolean).join(' ')
             const res = await fetch(`/api/google-places/search?query=${encodeURIComponent(query)}`)
             const data = await res.json()
-
             if (!res.ok) throw new Error(data.error || 'Error en la búsqueda')
-
             setResults(data.places || [])
             if (data.places?.length === 0) {
                 toast({ title: "Sin resultados", description: "Prueba con otros términos de búsqueda." })
@@ -179,6 +138,61 @@ export function DiscoverClient({ existingPlaceIds: initialIds }: { existingPlace
             toast({ variant: "destructive", title: "Error", description: (error as Error).message })
         }
         setLoading(false)
+    }
+
+    const handleDeepSearch = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!deepCategoria || !deepZona) return
+        setDeepLoading(true)
+        setDeepResults([])
+        try {
+            const res = await fetch('/api/google-places-deep', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ categoria: deepCategoria, zona: deepZona })
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Error en la búsqueda profunda')
+            setDeepResults(data.places || [])
+            toast({ title: `✅ ${data.total} comercios encontrados`, description: `Ordenados de mejor a peor puntuación.` })
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: (error as Error).message })
+        }
+        setDeepLoading(false)
+    }
+
+    const handleSaveAll = async () => {
+        if (!deepBarrio || !deepTipo || !deepCP) {
+            toast({ variant: "destructive", title: "Faltan datos", description: "Selecciona Barrio, Tipo y Código Postal antes de guardar." })
+            return
+        }
+        setSavingAll(true)
+        let saved = 0
+        let skipped = 0
+        const newIds = new Set(existingIds)
+        for (const place of deepResults) {
+            if (newIds.has(place.id)) { skipped++; continue }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const res = await createComercio({
+                nombre: place.displayName.text,
+                tipo_comercio: deepTipo as TipoComercio,
+                barrio: deepBarrio,
+                codigo_postal: deepCP,
+                direccion: place.formattedAddress || '',
+                telefono: place.internationalPhoneNumber || '',
+                web: place.websiteUri || '',
+                maps_place_id: place.id,
+                maps_lat: place.location?.latitude,
+                maps_lng: place.location?.longitude,
+                maps_url: place.googleMapsUri || '',
+                visitado: false,
+                estado_anuncio: null,
+            } as any)
+            if (res.success) { newIds.add(place.id); saved++ } else skipped++
+        }
+        setExistingIds(newIds)
+        setSavingAll(false)
+        toast({ title: `🎉 Importación completada`, description: `${saved} añadidos, ${skipped} omitidos (ya existían o error).` })
     }
 
     const startImport = (place: PlaceResult) => {
@@ -192,7 +206,7 @@ export function DiscoverClient({ existingPlaceIds: initialIds }: { existingPlace
             maps_lat: place.location?.latitude,
             maps_lng: place.location?.longitude,
             maps_url: place.googleMapsUri || "",
-            codigo_postal: "4300", // Placeholder común para Tarragona empezar
+            codigo_postal: "43001",
             barrio: "",
             visitado: false,
         })
@@ -209,7 +223,6 @@ export function DiscoverClient({ existingPlaceIds: initialIds }: { existingPlace
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const res = await createComercio({ ...values, estado_anuncio: null } as any)
         setImporting(false)
-
         if (res.success) {
             toast({ title: "Importado", description: `${values.nombre} guardado en la guía.` })
             setExistingIds(prev => new Set(prev).add(values.maps_place_id))
@@ -220,128 +233,220 @@ export function DiscoverClient({ existingPlaceIds: initialIds }: { existingPlace
     }
 
     return (
-        <div className="flex flex-col md:flex-row h-full">
-            {/* PANEL IZQUIERDO (40%) */}
-            <div className="w-full md:w-[40%] flex flex-col h-full border-r border-border bg-background z-10">
-                <div className="p-4 border-b border-border bg-card/50">
-                    <h1 className="text-xl font-bold mb-4 flex items-center gap-2">
-                        <Search className="h-5 w-5 text-primary" /> Descubrir Comercios
-                    </h1>
-                    <form onSubmit={handleSearch} className="space-y-3">
-                        <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Tipo de Comercio</Label>
-                            <Select value={searchTipo} onValueChange={setSearchTipo}>
-                                <SelectTrigger className="h-9"><SelectValue placeholder="Ej. Restaurante" /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Restaurante">Restaurante</SelectItem>
-                                    <SelectItem value="Bar">Bar</SelectItem>
-                                    <SelectItem value="Hotel">Hotel</SelectItem>
-                                    <SelectItem value="Tienda">Tienda</SelectItem>
-                                    <SelectItem value="Clínica">Clínica</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Zona / Barrio (Tarragona)</Label>
-                            <Input placeholder="Ej. Part Alta, Eixample..." value={searchZona} onChange={e => setSearchZona(e.target.value)} className="h-9" />
-                        </div>
-                        <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Texto libre (Opcional)</Label>
-                            <Input placeholder="Ej. comida vegana, dental..." value={searchText} onChange={e => setSearchText(e.target.value)} className="h-9" />
-                        </div>
-                        <Button type="submit" className="w-full" disabled={loading || (!searchTipo && !searchZona && !searchText)}>
-                            {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Buscando...</> : 'Buscar en Google Places'}
-                        </Button>
-                    </form>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-muted/10">
-                    {results.length > 0 && <p className="text-sm text-muted-foreground font-medium mb-2">{results.length} resultados encontrados</p>}
-
-                    {results.map(place => {
-                        const isExisting = existingIds.has(place.id)
-                        const isSelected = selectedPlace?.id === place.id
-
-                        return (
-                            <Card
-                                key={place.id}
-                                className={`cursor-pointer transition-colors hover:border-primary/50 ${isSelected ? 'border-primary ring-1 ring-primary/50 bg-primary/5' : ''}`}
-                                onClick={() => setSelectedPlace(place)}
-                            >
-                                <CardContent className="p-4">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-semibold text-base leading-tight break-words pr-2">{place.displayName.text}</h3>
-                                        {isExisting && <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 whitespace-nowrap shrink-0"><CheckCircle2 className="h-3 w-3 mr-1" />Registrado</Badge>}
-                                    </div>
-                                    <div className="space-y-1.5 text-sm text-muted-foreground">
-                                        <p className="flex items-start gap-1.5"><MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" /> <span className="line-clamp-2">{place.formattedAddress}</span></p>
-                                        {place.rating != null && <p className="flex items-center gap-1.5"><Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" /> {place.rating}</p>}
-                                    </div>
-                                    <div className="mt-4 flex gap-2">
-                                        <Button
-                                            size="sm"
-                                            variant={isExisting ? "secondary" : "default"}
-                                            className="w-full h-8"
-                                            disabled={isExisting}
-                                            onClick={(e) => { e.stopPropagation(); startImport(place); }}
-                                        >
-                                            {isExisting ? 'Ya en la guía' : 'Añadir a la guía'}
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )
-                    })}
-                    {!loading && results.length === 0 && (
-                        <div className="text-center py-12 text-muted-foreground">
-                            <MapPin className="h-8 w-8 mx-auto mb-3 opacity-20" />
-                            <p>Usa los filtros superiores para comenzar la prospección</p>
-                        </div>
-                    )}
-                </div>
+        <div className="flex flex-col h-full">
+            {/* Mode Tabs */}
+            <div className="flex gap-2 p-4 border-b border-border bg-card/50">
+                <Button
+                    variant={mode === 'normal' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setMode('normal')}
+                    className="flex items-center gap-2"
+                >
+                    <Search className="h-4 w-4" /> Búsqueda Normal
+                </Button>
+                <Button
+                    variant={mode === 'deep' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setMode('deep')}
+                    className="flex items-center gap-2"
+                >
+                    <Zap className="h-4 w-4" /> Búsqueda Profunda (Top 100)
+                </Button>
             </div>
 
-            {/* PANEL DERECHO (60%) - MAPA */}
-            <div className="hidden md:block md:w-[60%] h-full bg-slate-900 relative">
-                <LoadScript googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}>
-                    <GoogleMap
-                        mapContainerStyle={{ width: '100%', height: '100%' }}
-                        center={selectedPlace ? { lat: selectedPlace.location.latitude, lng: selectedPlace.location.longitude } : mapCenter}
-                        zoom={selectedPlace ? 17 : 13}
-                        options={MAP_OPTIONS}
-                    >
-                        {results.map(place => (
-                            <Marker
-                                key={place.id}
-                                position={{ lat: place.location.latitude, lng: place.location.longitude }}
-                                onClick={() => setSelectedPlace(place)}
-                                icon={{
-                                    url: existingIds.has(place.id) ? "http://maps.google.com/mapfiles/ms/icons/green-dot.png" : "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
-                                }}
-                            />
-                        ))}
-                        {selectedPlace && (
-                            <InfoWindow
-                                position={{ lat: selectedPlace.location.latitude, lng: selectedPlace.location.longitude }}
-                                onCloseClick={() => setSelectedPlace(null)}
-                            >
-                                <div className="p-1 max-w-[200px] text-zinc-900">
-                                    <h4 className="font-bold text-sm mb-1">{selectedPlace.displayName.text}</h4>
-                                    <p className="text-xs mb-2 line-clamp-2">{selectedPlace.formattedAddress}</p>
-                                    <Button
-                                        size="sm"
-                                        className="w-full h-7 text-xs"
-                                        disabled={existingIds.has(selectedPlace.id)}
-                                        onClick={() => startImport(selectedPlace)}
-                                    >
-                                        {existingIds.has(selectedPlace.id) ? 'Registrado' : 'Añadir'}
-                                    </Button>
+            {/* ==================== NORMAL MODE ==================== */}
+            {mode === 'normal' && (
+                <div className="flex flex-col md:flex-row flex-1 min-h-0">
+                    <div className="w-full md:w-[40%] flex flex-col h-full border-r border-border bg-background z-10">
+                        <div className="p-4 border-b border-border bg-card/50">
+                            <h1 className="text-xl font-bold mb-4 flex items-center gap-2">
+                                <Search className="h-5 w-5 text-primary" /> Descubrir Comercios
+                            </h1>
+                            <form onSubmit={handleSearch} className="space-y-3">
+                                <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Tipo de Comercio</Label>
+                                    <Select value={searchTipo} onValueChange={setSearchTipo}>
+                                        <SelectTrigger className="h-9"><SelectValue placeholder="Ej. Restaurante" /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Restaurante">Restaurante</SelectItem>
+                                            <SelectItem value="Bar">Bar</SelectItem>
+                                            <SelectItem value="Hotel">Hotel</SelectItem>
+                                            <SelectItem value="Tienda">Tienda</SelectItem>
+                                            <SelectItem value="Clínica">Clínica</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
-                            </InfoWindow>
+                                <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Zona / Barrio (Tarragona)</Label>
+                                    <Input placeholder="Ej. Part Alta, Eixample..." value={searchZona} onChange={e => setSearchZona(e.target.value)} className="h-9" />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Texto libre (Opcional)</Label>
+                                    <Input placeholder="Ej. comida vegana, dental..." value={searchText} onChange={e => setSearchText(e.target.value)} className="h-9" />
+                                </div>
+                                <Button type="submit" className="w-full" disabled={loading || (!searchTipo && !searchZona && !searchText)}>
+                                    {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Buscando...</> : 'Buscar en Google Places'}
+                                </Button>
+                            </form>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-muted/10">
+                            {results.length > 0 && <p className="text-sm text-muted-foreground font-medium mb-2">{results.length} resultados encontrados</p>}
+                            {results.map(place => {
+                                const isExisting = existingIds.has(place.id)
+                                const isSelected = selectedPlace?.id === place.id
+                                return (
+                                    <Card key={place.id} className={`cursor-pointer transition-colors hover:border-primary/50 ${isSelected ? 'border-primary ring-1 ring-primary/50 bg-primary/5' : ''}`} onClick={() => setSelectedPlace(place)}>
+                                        <CardContent className="p-4">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h3 className="font-semibold text-base leading-tight break-words pr-2">{place.displayName.text}</h3>
+                                                {isExisting && <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 whitespace-nowrap shrink-0"><CheckCircle2 className="h-3 w-3 mr-1" />Registrado</Badge>}
+                                            </div>
+                                            <div className="space-y-1.5 text-sm text-muted-foreground">
+                                                <p className="flex items-start gap-1.5"><MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" /> <span className="line-clamp-2">{place.formattedAddress}</span></p>
+                                                {place.rating != null && <p className="flex items-center gap-1.5"><Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" /> {place.rating} ({place.userRatingCount ?? 0} reseñas)</p>}
+                                            </div>
+                                            <div className="mt-4 flex gap-2">
+                                                <Button size="sm" variant={isExisting ? "secondary" : "default"} className="w-full h-8" disabled={isExisting} onClick={(e) => { e.stopPropagation(); startImport(place); }}>
+                                                    {isExisting ? 'Ya en la guía' : 'Añadir a la guía'}
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                )
+                            })}
+                            {!loading && results.length === 0 && (
+                                <div className="text-center py-12 text-muted-foreground">
+                                    <MapPin className="h-8 w-8 mx-auto mb-3 opacity-20" />
+                                    <p>Usa los filtros superiores para comenzar la prospección</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <div className="hidden md:block md:w-[60%] h-full bg-slate-900 relative">
+                        <LoadScript googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}>
+                            <GoogleMap mapContainerStyle={{ width: '100%', height: '100%' }} center={selectedPlace ? { lat: selectedPlace.location.latitude, lng: selectedPlace.location.longitude } : mapCenter} zoom={selectedPlace ? 17 : 13} options={MAP_OPTIONS}>
+                                {results.map(place => (
+                                    <Marker key={place.id} position={{ lat: place.location.latitude, lng: place.location.longitude }} onClick={() => setSelectedPlace(place)} icon={{ url: existingIds.has(place.id) ? "http://maps.google.com/mapfiles/ms/icons/green-dot.png" : "http://maps.google.com/mapfiles/ms/icons/red-dot.png" }} />
+                                ))}
+                                {selectedPlace && (
+                                    <InfoWindow position={{ lat: selectedPlace.location.latitude, lng: selectedPlace.location.longitude }} onCloseClick={() => setSelectedPlace(null)}>
+                                        <div className="p-1 max-w-[200px] text-zinc-900">
+                                            <h4 className="font-bold text-sm mb-1">{selectedPlace.displayName.text}</h4>
+                                            <p className="text-xs mb-2 line-clamp-2">{selectedPlace.formattedAddress}</p>
+                                            <Button size="sm" className="w-full h-7 text-xs" disabled={existingIds.has(selectedPlace.id)} onClick={() => startImport(selectedPlace)}>
+                                                {existingIds.has(selectedPlace.id) ? 'Registrado' : 'Añadir'}
+                                            </Button>
+                                        </div>
+                                    </InfoWindow>
+                                )}
+                            </GoogleMap>
+                        </LoadScript>
+                    </div>
+                </div>
+            )}
+
+            {/* ==================== DEEP SEARCH MODE ==================== */}
+            {mode === 'deep' && (
+                <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                    <div className="p-4 border-b border-border bg-card/50 space-y-4">
+                        <div>
+                            <h2 className="text-lg font-bold flex items-center gap-2 mb-1"><Zap className="h-5 w-5 text-yellow-400" /> Búsqueda Profunda</h2>
+                            <p className="text-sm text-muted-foreground">Obtén hasta 100 comercios ordenados por puntuación de Google Maps, evadiendo el límite de 60 resultados.</p>
+                        </div>
+                        <form onSubmit={handleDeepSearch} className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">Categoría *</Label>
+                                <Input placeholder="Ej. Restaurantes, Peluquerías..." value={deepCategoria} onChange={e => setDeepCategoria(e.target.value)} className="h-9" />
+                            </div>
+                            <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">Zona *</Label>
+                                <Input placeholder="Ej. Tarragona, Altafulla..." value={deepZona} onChange={e => setDeepZona(e.target.value)} className="h-9" />
+                            </div>
+                            <Button type="submit" className="col-span-2" disabled={deepLoading || !deepCategoria || !deepZona}>
+                                {deepLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Buscando (puede tardar 20-30 segundos)...</> : <><Zap className="h-4 w-4 mr-2" />Lanzar Búsqueda Profunda</>}
+                            </Button>
+                        </form>
+
+                        {deepResults.length > 0 && (
+                            <div className="grid grid-cols-3 gap-3 pt-2 border-t border-border">
+                                <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Barrio para importar *</Label>
+                                    <Select value={deepBarrio} onValueChange={setDeepBarrio}>
+                                        <SelectTrigger className="h-9"><SelectValue placeholder="Selecciona barrio" /></SelectTrigger>
+                                        <SelectContent>{BARRIOS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Tipo de comercio *</Label>
+                                    <Select value={deepTipo} onValueChange={setDeepTipo}>
+                                        <SelectTrigger className="h-9"><SelectValue placeholder="Selecciona tipo" /></SelectTrigger>
+                                        <SelectContent>{TIPOS.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Código Postal</Label>
+                                    <Input placeholder="43001" value={deepCP} onChange={e => setDeepCP(e.target.value)} className="h-9" />
+                                </div>
+                                <Button onClick={handleSaveAll} disabled={savingAll || !deepBarrio || !deepTipo} className="col-span-3 bg-green-600 hover:bg-green-700 text-white">
+                                    {savingAll ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Guardando todos...</> : `💾 Guardar los ${deepResults.length} resultados en la Guía`}
+                                </Button>
+                            </div>
                         )}
-                    </GoogleMap>
-                </LoadScript>
-            </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto">
+                        {deepResults.length > 0 && (
+                            <table className="w-full text-sm">
+                                <thead className="sticky top-0 bg-card border-b border-border">
+                                    <tr>
+                                        <th className="text-left p-3 text-muted-foreground font-medium w-8">#</th>
+                                        <th className="text-left p-3 text-muted-foreground font-medium">Nombre</th>
+                                        <th className="text-left p-3 text-muted-foreground font-medium">Dirección</th>
+                                        <th className="text-center p-3 text-muted-foreground font-medium w-24">Puntuación</th>
+                                        <th className="text-center p-3 text-muted-foreground font-medium w-24">Reseñas</th>
+                                        <th className="text-center p-3 text-muted-foreground font-medium w-28">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {deepResults.map((place, i) => {
+                                        const isExisting = existingIds.has(place.id)
+                                        return (
+                                            <tr key={place.id} className={`border-b border-border/50 hover:bg-muted/30 transition-colors ${isExisting ? 'opacity-50' : ''}`}>
+                                                <td className="p-3 text-muted-foreground">{i + 1}</td>
+                                                <td className="p-3 font-medium">
+                                                    <div>{place.displayName.text}</div>
+                                                    {place.googleMapsUri && <a href={place.googleMapsUri} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">Ver en Maps</a>}
+                                                </td>
+                                                <td className="p-3 text-muted-foreground text-xs">{place.formattedAddress}</td>
+                                                <td className="p-3 text-center">
+                                                    <span className="flex items-center justify-center gap-1 font-semibold">
+                                                        <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" />
+                                                        {place.rating}
+                                                    </span>
+                                                </td>
+                                                <td className="p-3 text-center text-muted-foreground">{place.userRatingCount?.toLocaleString() ?? '-'}</td>
+                                                <td className="p-3 text-center">
+                                                    {isExisting
+                                                        ? <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 text-xs"><CheckCircle2 className="h-3 w-3 mr-1" />En guía</Badge>
+                                                        : <Badge variant="outline" className="text-xs">Nuevo</Badge>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        )}
+                        {!deepLoading && deepResults.length === 0 && (
+                            <div className="text-center py-16 text-muted-foreground">
+                                <Zap className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                                <p className="font-medium">Introduce una categoría y zona para lanzar la búsqueda profunda</p>
+                                <p className="text-sm mt-1 opacity-70">Puede tardar hasta 30 segundos mientras consultamos múltiples páginas de Google Maps.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* MODAL / SHEET DE IMPORTACIÓN */}
             <Sheet open={importOpen} onOpenChange={setImportOpen}>
