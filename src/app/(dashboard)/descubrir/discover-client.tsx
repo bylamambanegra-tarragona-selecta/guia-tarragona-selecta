@@ -17,7 +17,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { TipoComercio } from "@prisma/client"
-import { createComercio } from "@/actions/comercio"
 
 // Schema para el formulario de importación
 const importSchema = z.object({
@@ -172,24 +171,28 @@ export function DiscoverClient({ existingPlaceIds: initialIds }: { existingPlace
         const newIds = new Set(existingIds)
         for (const place of deepResults) {
             if (newIds.has(place.id)) { skipped++; continue }
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const res = await createComercio({
-                nombre: place.displayName.text,
-                tipo_comercio: deepTipo as TipoComercio,
-                barrio: deepBarrio,
-                codigo_postal: deepCP,
-                direccion: place.formattedAddress || '',
-                telefono: place.internationalPhoneNumber || '',
-                web: place.websiteUri || '',
-                maps_place_id: place.id,
-                maps_lat: place.location?.latitude,
-                maps_lng: place.location?.longitude,
-                maps_url: place.googleMapsUri || '',
-                visitado: false,
-                estado_anuncio: null,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } as any)
-            if (res.success) { newIds.add(place.id); saved++ } else skipped++
+            try {
+                const res = await fetch('/api/comercios', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nombre: place.displayName.text,
+                        tipo_comercio: deepTipo,
+                        barrio: deepBarrio,
+                        codigo_postal: deepCP,
+                        direccion: place.formattedAddress || '',
+                        telefono: place.internationalPhoneNumber || '',
+                        web: place.websiteUri || '',
+                        maps_place_id: place.id,
+                        maps_lat: place.location?.latitude,
+                        maps_lng: place.location?.longitude,
+                        maps_url: place.googleMapsUri || '',
+                        visitado: false,
+                        estado_anuncio: null,
+                    })
+                })
+                if (res.ok) { newIds.add(place.id); saved++ } else skipped++
+            } catch { skipped++ }
         }
         setExistingIds(newIds)
         setSavingAll(false)
@@ -221,16 +224,24 @@ export function DiscoverClient({ existingPlaceIds: initialIds }: { existingPlace
 
     const onImportSubmit = async (values: z.infer<typeof importSchema>) => {
         setImporting(true)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const res = await createComercio({ ...values, estado_anuncio: null } as any)
-        setImporting(false)
-        if (res.success) {
-            toast({ title: "Importado", description: `${values.nombre} guardado en la guía.` })
-            setExistingIds(prev => new Set(prev).add(values.maps_place_id))
-            setImportOpen(false)
-        } else {
-            toast({ variant: "destructive", title: "Error", description: res.error })
+        try {
+            const res = await fetch('/api/comercios', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...values, estado_anuncio: null })
+            })
+            setImporting(false)
+            if (res.ok) {
+                toast({ title: "Importado", description: `${values.nombre} guardado en la guía.` })
+                setExistingIds(prev => new Set(prev).add(values.maps_place_id))
+                setImportOpen(false)
+            } else {
+                const err = await res.json()
+                toast({ variant: "destructive", title: "Error", description: err.error || 'No se pudo guardar.' })
+            }
+        } catch {
+            setImporting(false)
+            toast({ variant: "destructive", title: "Error", description: 'Error de conexión al guardar.' })
         }
     }
 
