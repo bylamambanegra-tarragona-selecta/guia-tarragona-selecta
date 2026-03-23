@@ -187,6 +187,7 @@ export function DiscoverClient({ existingPlaceIds: initialIds }: { existingPlace
                 maps_url: place.googleMapsUri || '',
                 visitado: false,
                 estado_anuncio: null,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any)
             if (res.success) { newIds.add(place.id); saved++ } else skipped++
         }
@@ -221,7 +222,8 @@ export function DiscoverClient({ existingPlaceIds: initialIds }: { existingPlace
     const onImportSubmit = async (values: z.infer<typeof importSchema>) => {
         setImporting(true)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const res = await createComercio({ ...values, estado_anuncio: null } as any)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const res = await createComercio({ ...values, estado_anuncio: null } as any)
         setImporting(false)
         if (res.success) {
             toast({ title: "Importado", description: `${values.nombre} guardado en la guía.` })

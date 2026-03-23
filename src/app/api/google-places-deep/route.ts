@@ -2,9 +2,34 @@ import { NextRequest, NextResponse } from "next/server"
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
-async function fetchPage(query: string, apiKey: string, pageToken?: string): Promise<{ places: any[], nextPageToken?: string }> {
+type GooglePlace = {
+    id: string;
+    displayName?: { text: string };
+    formattedAddress?: string;
+    internationalPhoneNumber?: string;
+    websiteUri?: string;
+    location?: { latitude: number; longitude: number };
+    rating?: number;
+    userRatingCount?: number;
+    googleMapsUri?: string;
+}
+
+type FetchPagePayload = {
+    pageToken?: string;
+    textQuery?: string;
+    maxResultCount?: number;
+    languageCode?: string;
+    locationBias?: {
+        circle: {
+            center: { latitude: number; longitude: number };
+            radius: number;
+        };
+    };
+}
+
+async function fetchPage(query: string, apiKey: string, pageToken?: string): Promise<{ places: GooglePlace[], nextPageToken?: string }> {
     const url = "https://places.googleapis.com/v1/places:searchText"
-    const payload: any = pageToken
+    const payload: FetchPagePayload = pageToken
         ? { pageToken }
         : {
             textQuery: query,
@@ -37,12 +62,13 @@ async function fetchPage(query: string, apiKey: string, pageToken?: string): Pro
     return { places: data.places || [], nextPageToken: data.nextPageToken }
 }
 
-async function deepSearch(query: string, apiKey: string): Promise<any[]> {
-    const allPlaces = new Map<string, any>()
+async function deepSearch(query: string, apiKey: string): Promise<GooglePlace[]> {
+    const allPlaces = new Map<string, GooglePlace>()
 
     // Fetch first page
-    let { places, nextPageToken } = await fetchPage(query, apiKey)
-    places.forEach(p => { if (p.id) allPlaces.set(p.id, p) })
+    const firstPage = await fetchPage(query, apiKey)
+    let nextPageToken = firstPage.nextPageToken
+    firstPage.places.forEach(p => { if (p.id) allPlaces.set(p.id, p) })
 
     // Paginate up to 2 more pages (60 results max from single query)
     let pageCount = 1
@@ -75,7 +101,7 @@ export async function POST(req: NextRequest) {
         `${categoria} cerca de ${zona}`,
     ]
 
-    const globalMap = new Map<string, any>()
+    const globalMap = new Map<string, GooglePlace>()
 
     for (const query of queries) {
         const places = await deepSearch(query, apiKey)
@@ -87,7 +113,7 @@ export async function POST(req: NextRequest) {
     const sorted = Array.from(globalMap.values())
         .filter(p => p.rating != null)
         .sort((a, b) => {
-            if (b.rating !== a.rating) return b.rating - a.rating
+            if ((b.rating ?? 0) !== (a.rating ?? 0)) return (b.rating ?? 0) - (a.rating ?? 0)
             return (b.userRatingCount || 0) - (a.userRatingCount || 0)
         })
         .slice(0, 100)
