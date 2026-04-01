@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { LayoutDashboard, Store, Search, LogOut } from "lucide-react"
+import { LayoutDashboard, Store, Search, LogOut, CircleDollarSign } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
@@ -27,6 +27,13 @@ export function Sidebar() {
                     >
                         <Search className="h-4 w-4" />
                         Descubrir (Google Places)
+                    </Link>
+                    <Link
+                        href="/pagos"
+                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-green-500 hover:bg-green-500/10"
+                    >
+                        <CircleDollarSign className="h-4 w-4" />
+                        Cobros y Pagos
                     </Link>
                 </nav>
             </div>

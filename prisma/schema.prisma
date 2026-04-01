@@ -33,6 +33,12 @@ enum EstadoAnuncio {
   TAL_VEZ
 }
 
+enum EstadoPago {
+  NO_PAGADO
+  PAGADO_50
+  PAGADO_100
+}
+
 // ─────────────────────────────────────────────────────────────
 // COMERCIO — tabla principal
 // ─────────────────────────────────────────────────────────────
@@ -62,9 +68,10 @@ model Comercio {
   maps_lat       Float?
   maps_lng       Float?
 
-  // Prospección
+  // Prospección y Ventas
   estado_anuncio EstadoAnuncio?
   tipo_anuncio   String?
+  estado_pago    EstadoPago     @default(NO_PAGADO)
   visitado       Boolean        @default(false)
 
   // Notas — array JSON de { texto, fecha, autor }

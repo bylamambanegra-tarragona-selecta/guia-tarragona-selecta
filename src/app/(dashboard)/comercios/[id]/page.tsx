@@ -12,6 +12,7 @@ import { EditComercioSheet } from "./edit-comercio-sheet"
 import { DeleteComercioButton } from "./delete-comercio-button"
 import { NotesList } from "./notes-list"
 import { AddNoteForm } from "./add-note-form"
+import { PagoStatusButtons } from "./pago-status-buttons"
 import type { EstadoAnuncio, TipoComercio } from "@prisma/client"
 
 const TIPO_LABELS: Record<TipoComercio, string> = {
@@ -81,6 +82,16 @@ export default async function ComercioDetailPage({ params }: { params: { id: str
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Pago */}
+                <Card className="md:col-span-2 border-primary/20 bg-primary/5">
+                    <CardHeader className="pb-3 px-6 pt-5">
+                        <CardTitle className="text-base text-primary uppercase tracking-wider text-xs font-bold">Cobros y Finanzas</CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-6 pb-6">
+                        <PagoStatusButtons comercioId={comercio.id} estadoPagoBase={comercio.estado_pago || 'NO_PAGADO'} />
+                    </CardContent>
+                </Card>
+
                 {/* Contacto */}
                 <Card>
                     <CardHeader className="pb-3">

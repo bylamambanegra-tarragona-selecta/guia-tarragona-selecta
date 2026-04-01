@@ -1,7 +1,7 @@
 'use server'
 
 import prisma from '@/lib/prisma'
-import { TipoComercio, EstadoAnuncio } from '@prisma/client'
+import { TipoComercio, EstadoAnuncio, EstadoPago } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 
 export type CreateComercioInput = {
@@ -22,6 +22,7 @@ export type CreateComercioInput = {
     maps_lng?: number
     estado_anuncio?: EstadoAnuncio | null
     tipo_anuncio?: string
+    estado_pago?: EstadoPago
     visitado?: boolean
 }
 
@@ -46,6 +47,7 @@ export async function createComercio(data: CreateComercioInput) {
                 maps_lng: data.maps_lng,
                 estado_anuncio: data.estado_anuncio ?? null,
                 tipo_anuncio: data.tipo_anuncio,
+                estado_pago: data.estado_pago ?? 'NO_PAGADO',
                 visitado: data.visitado ?? false,
                 notas: [],
             }
@@ -98,5 +100,20 @@ export async function toggleVisitado(id: string, visitado: boolean) {
     } catch (error) {
         console.error('Error updating visitado:', error)
         return { success: false, error: 'No se ha podido actualizar el estado.' }
+    }
+}
+
+export async function updateEstadoPago(id: string, estado_pago: EstadoPago) {
+    try {
+        await prisma.comercio.update({
+            where: { id },
+            data: { estado_pago },
+        })
+        revalidatePath('/comercios')
+        revalidatePath('/pagos')
+        return { success: true }
+    } catch (error) {
+        console.error('Error updating estado_pago:', error)
+        return { success: false, error: 'No se ha podido actualizar el pago.' }
     }
 }

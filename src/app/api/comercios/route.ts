@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const cp = searchParams.get('cp') || ''
     const visitado = searchParams.get('visitado') // 'true' | 'false' | ''
     const estado = searchParams.getAll('estado')
+    const estado_pago = searchParams.getAll('estado_pago')
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '25')
 
@@ -44,6 +45,8 @@ export async function GET(request: NextRequest) {
                     ...(estado.includes('null') ? [{ estado_anuncio: null }] : []),
                 ],
             } : {},
+            // Estado de pago
+            estado_pago.length > 0 ? { estado_pago: { in: estado_pago } } : {},
         ],
     }
 
@@ -87,6 +90,7 @@ export async function POST(request: NextRequest) {
                 maps_lng: body.maps_lng,
                 estado_anuncio: body.estado_anuncio ?? null,
                 tipo_anuncio: body.tipo_anuncio,
+                estado_pago: body.estado_pago ?? 'NO_PAGADO',
                 visitado: body.visitado ?? false,
                 notas: [],
             }
