@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import {
-    Search, Filter, X, ChevronLeft, ChevronRight, Loader2, SlidersHorizontal, Eye, Pencil
+    Search, Filter, X, ChevronLeft, ChevronRight, SlidersHorizontal
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
